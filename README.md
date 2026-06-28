@@ -1,21 +1,20 @@
-# Car Ownership Tree
+# Car Ownership Atlas
 
-An interactive radial tree chart showing global automotive brand ownership — which parent corporations control which car brands.
+An interactive circular tree showing global automotive brand ownership — which parent corporations control which car brands.
 
 ![](car-ownership.jpg)
 
 ## Features
 
-- **Radial tree layout** — root in the center, brands radiate outward
-- **Click to collapse/expand** any node to reduce clutter
-- **Scroll to zoom, drag to pan** around the chart
-- **Brand logo images** displayed for each leaf node
+- **Circular tree layout** — parent groups radiate from the center into brands
+- **Curved ownership links** — branches are colored by parent group
+- **Hover path highlighting** — tooltips show ownership path and majority-owned or joint-venture status
 - **Dark mode** support (follows OS preference)
 - **Asterisk notation**: `*` = majority-owned, `**` = joint venture
 
 ## Data
 
-Covers 10 major automotive groups and ~57 brands:
+Covers 21 major automotive groups and ~104 brands:
 
 | Group | Brands |
 |-------|--------|
@@ -24,11 +23,22 @@ Covers 10 major automotive groups and ~57 brands:
 | Toyota | Toyota, Lexus, Daihatsu, Hino, Subaru\*, Mazda\* |
 | Renault-Nissan-Mitsubishi | Renault, Dacia, Alpine, Nissan, Infiniti, Mitsubishi |
 | Hyundai | Hyundai, Kia, Genesis |
+| Mercedes-Benz Group | Mercedes-Benz, Mercedes-AMG, Mercedes-Maybach |
+| Honda | Honda, Acura |
+| Suzuki | Suzuki, Maruti Suzuki\* |
 | Geely | Geely Auto, Zeekr, Lynk & Co, Volvo\*, Polestar\*, Lotus\*, Smart\*\* |
+| SAIC Motor | MG, Roewe, IM Motors, Maxus/LDV, Wuling\*\*, Baojun\*\* |
+| Chery Holding Group | Chery, Exeed, Jetour, iCAR, Omoda, Jaecoo, Luxeed\*\* |
+| Great Wall Motor | Haval, Wey, Tank, Ora, Poer |
+| Changan Automobile | Changan, Deepal, Avatr\*\* |
+| FAW Group | Hongqi, Bestune, Jiefang |
+| Dongfeng Motor | Dongfeng, Voyah, M-Hero |
+| BAIC Group | BAIC, Beijing, Arcfox |
 | General Motors | Chevrolet, GMC, Cadillac |
 | Ford | Ford, Lincoln |
 | Tata Motors | Jaguar, Land Rover |
-| Independent | Tesla, BYD, BMW, MINI, Rolls-Royce |
+| Mahindra Group | Mahindra, Pininfarina |
+| Independent | Tesla, BYD, Ferrari, Aston Martin, McLaren, Lucid, Rivian, VinFast, Isuzu, BMW, MINI, Rolls-Royce |
 
 ## Logo download
 
