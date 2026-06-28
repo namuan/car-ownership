@@ -30,19 +30,20 @@ Covers 10 major automotive groups and ~57 brands:
 | Tata Motors | Jaguar, Land Rover |
 | Independent | Tesla, BYD, BMW, MINI, Rolls-Royce |
 
-## Logo download scripts
+## Logo download
 
-- `download-logos.py` — downloads brand logos from Wikipedia to `car-logos/`
-- `download-logos-retry.py` — retries failed downloads with alternate page titles
-- `download-logos-final.py` — final pass for stubborn brands using known file names
-
-Run them in order if starting fresh:
 ```bash
 python3 download-logos.py
-python3 download-logos-retry.py
-python3 download-logos-final.py
 ```
 
-## Tech
+Downloads brand logos from Wikipedia to `car-logos/`. Run once — it handles retries and fallbacks automatically.
 
-Built with [D3.js v7](https://d3js.org/) — standalone HTML, no build step.
+## Disclaimer
+
+**Data accuracy**: The ownership structure shown reflects publicly available information as of **June 2026**. Corporate ownership can change — always verify against official sources before relying on this data.
+
+**No liability**: This project is provided for informational purposes only. The authors make no representations or warranties of any kind, express or implied, about the completeness, accuracy, or reliability of the information. You use it at your own risk.
+
+## License
+
+[MIT](LICENSE) © Namuan
