@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Car Ownership Tree</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --text: #1a1a19;
+    --text-secondary: #5f5e5a;
+    --border: rgba(0,0,0,0.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a19;
+      --text: #f1efe8;
+      --text-secondary: #b4b2a9;
+      --border: rgba(255,255,255,0.12);
+    }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  header {
+    flex-shrink: 0;
+    padding: 20px 28px 12px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  h1 { font-size: 20px; font-weight: 600; margin-bottom: 2px; }
+  .subtitle { font-size: 13px; color: var(--text-secondary); }
+
+  #chart-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    cursor: grab;
+  }
+  #chart-wrap:active { cursor: grabbing; }
+  #chart-wrap.panning { cursor: grabbing; }
+
+  #chart {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Links */
+  .link {
+    fill: none;
+    stroke: #b4b2a9;
+    stroke-width: 1.2;
+    opacity: 0.6;
+  }
+  @media (prefers-color-scheme: dark) {
+    .link { stroke: #5f5e5a; }
+  }
+
+  /* Node circles */
+  .node circle {
+    fill: var(--bg);
+    cursor: pointer;
+    transition: r 0.2s;
+  }
+  .node--root circle { stroke: #534AB7; stroke-width: 2.5; r: 12; }
+  .node--level1 circle { stroke: #7F77DD; stroke-width: 2; r: 9; }
+  .node--level2 circle { stroke: #D85A30; stroke-width: 1.5; r: 7; }
+  .node--leaf circle { stroke: #1D9E75; stroke-width: 1.5; r: 5; }
+
+  /* Logo images for leaf nodes */
+  .node--leaf .logo-img {
+    clip-path: circle(50%);
+    cursor: pointer;
+  }
+  .node--leaf .logo-fallback {
+    display: none;
+  }
+
+  /* Text */
+  .node text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+
+  /* Root text */
+  .node--root text { font-weight: 700; font-size: 18px; fill: var(--text); }
+
+  /* Level 1 - Parent companies */
+  .node--level1 .label-bg { fill: #EEEDFE; }
+  .node--level1 text { fill: #26215C; font-weight: 700; font-size: 16px; }
+  @media (prefers-color-scheme: dark) {
+    .node--level1 .label-bg { fill: #3C3489; }
+    .node--level1 text { fill: #CECBF6; }
+  }
+
+  /* Level 2 - Subgroups */
+  .node--level2 .label-bg { fill: #FAECE7; }
+  .node--level2 text { fill: #4A1B0C; font-weight: 600; font-size: 13px; }
+  @media (prefers-color-scheme: dark) {
+    .node--level2 .label-bg { fill: #712B13; }
+    .node--level2 text { fill: #F5C4B3; }
+  }
+
+  /* Level 3 - Brands */
+  .node--leaf .label-bg { fill: #E1F5EE; }
+  .node--leaf text { fill: #04342C; font-weight: 600; font-size: 11px; }
+  @media (prefers-color-scheme: dark) {
+    .node--leaf .label-bg { fill: #085041; }
+    .node--leaf text { fill: #9FE1CB; }
+  }
+
+  /* Tooltip */
+  .tooltip {
+    position: fixed;
+    padding: 6px 10px;
+    font-size: 11px;
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    max-width: 200px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 10;
+  }
+  @media (prefers-color-scheme: dark) {
+    .tooltip { box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+  }
+
+  .legend {
+    flex-shrink: 0;
+    padding: 12px 28px;
+    display: flex; gap: 18px; flex-wrap: wrap;
+    font-size: 11px; color: var(--text-secondary);
+    border-top: 0.5px solid var(--border);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid; }
+
+  .zoom-controls {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 5;
+  }
+  .zoom-btn {
+    width: 32px; height: 32px;
+    border: 0.5px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+  .zoom-btn:hover { background: var(--color-background-secondary, #f5f5f4); }
+  @media (prefers-color-scheme: dark) {
+    .zoom-btn:hover { background: #2c2c2a; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Global Car Brand Ownership</h1>
+  <p class="subtitle">Scroll to zoom &bull; Drag to pan &bull; Tap node to collapse</p>
+</header>
+
+<div id="chart-wrap">
+  <div id="chart"></div>
+  <div class="zoom-controls">
+    <button class="zoom-btn" id="zoom-in" title="Zoom in">+</button>
+    <button class="zoom-btn" id="zoom-out" title="Zoom out">−</button>
+    <button class="zoom-btn" id="zoom-fit" title="Fit to screen">⛶</button>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><span class="legend-dot" style="border-color:#7F77DD"></span> Parent Group</div>
+  <div class="legend-item"><span class="legend-dot" style="border-color:#D85A30"></span> Segment</div>
+  <div class="legend-item"><span class="legend-dot" style="border-color:#1D9E75"></span> Brand</div>
+  <div class="legend-item" style="opacity:0.6">* Majority owned &nbsp; ** Joint venture</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+const data = {
+  name: "Global Automotive Groups",
+  children: [
+    {
+      name: "Volkswagen Group (10)",
+      children: [
+        { name: "Volkswagen" }, { name: "Škoda" }, { name: "SEAT" },
+        { name: "CUPRA" }, { name: "VW Commercial" },
+        { name: "Audi" }, { name: "Porsche" }, { name: "Bentley" },
+        { name: "Lamborghini" }, { name: "Ducati" }
+      ]
+    },
+    {
+      name: "Stellantis (14)",
+      children: [
+        { name: "Jeep" }, { name: "Ram" }, { name: "Peugeot" }, { name: "FIAT" },
+        { name: "Chrysler" }, { name: "Dodge" }, { name: "Citroën" },
+        { name: "Opel" }, { name: "Vauxhall" }, { name: "Alfa Romeo" },
+        { name: "DS" }, { name: "Lancia" }, { name: "Abarth" }, { name: "Maserati" }
+      ]
+    },
+    {
+      name: "Toyota Motor Corp (6)",
+      children: [
+        { name: "Toyota" }, { name: "Lexus" }, { name: "Daihatsu" },
+        { name: "Hino" }, { name: "Subaru*" }, { name: "Mazda*" }
+      ]
+    },
+    {
+      name: "Renault-Nissan-Mitsubishi (6)",
+      children: [
+        { name: "Renault Group", children: [
+          { name: "Renault" }, { name: "Dacia" }, { name: "Alpine" }
+        ]},
+        { name: "Nissan Group", children: [
+          { name: "Nissan" }, { name: "Infiniti" }
+        ]},
+        { name: "Alliance Partner", children: [{ name: "Mitsubishi" }] }
+      ]
+    },
+    {
+      name: "Hyundai Motor Group (3)",
+      children: [
+        { name: "Hyundai" }, { name: "Kia" }, { name: "Genesis" }
+      ]
+    },
+    {
+      name: "Geely Holding Group (7)",
+      children: [
+        { name: "Geely Auto" }, { name: "Zeekr" }, { name: "Lynk & Co" },
+        { name: "Volvo Cars*" }, { name: "Polestar*" }, { name: "Lotus*" },
+        { name: "Smart**" }
+      ]
+    },
+    {
+      name: "General Motors (3)",
+      children: [
+        { name: "Chevrolet" }, { name: "GMC" }, { name: "Cadillac" }
+      ]
+    },
+    {
+      name: "Ford Motor Company (2)",
+      children: [
+        { name: "Ford" }, { name: "Lincoln" }
+      ]
+    },
+    {
+      name: "Tata Motors (2)",
+      children: [
+        { name: "Jaguar" }, { name: "Land Rover" }
+      ]
+    },
+    {
+      name: "Independent (5)",
+      children: [
+        { name: "Fully Independent", children: [
+          { name: "Tesla" }, { name: "BYD" }
+        ]},
+        { name: "BMW Group", children: [
+          { name: "BMW" }, { name: "MINI" }, { name: "Rolls-Royce" }
+        ]}
+      ]
+    }
+  ]
+};
+
+// ── Dimensions ──
+const diameter = 2600;
+const radius = diameter / 2;
+const margin = 60;
+
+// ── Hierarchy ──
+const root = d3.hierarchy(data);
+const treeLayout = d3.tree()
+  .size([2 * Math.PI, radius - margin])
+  .separation((a, b) => (a.parent === b.parent ? 1.5 : 2.2) / a.depth);
+
+// ── SVG ──
+const chartDiv = d3.select("#chart");
+const svg = chartDiv.append("svg")
+  .attr("width", "100%")
+  .attr("height", "100%")
+  .attr("viewBox", [-diameter/2, -diameter/2, diameter, diameter])
+  .attr("preserveAspectRatio", "xMidYMid meet")
+  .style("display", "block");
+
+const gRoot = svg.append("g");
+const gLink = gRoot.append("g");
+const gNode = gRoot.append("g");
+
+const tooltip = d3.select("body").append("div").attr("class", "tooltip");
+
+// Radial projection
+function radialPoint(x, y) {
+  return [(y = +y) * Math.cos(x -= Math.PI / 2), y * Math.sin(x)];
+}
+
+const radialLink = d3.linkRadial()
+  .angle(d => d.x)
+  .radius(d => d.y);
+
+// ── Zoom ──
+const zoomBehavior = d3.zoom()
+  .scaleExtent([0.15, 4])
+  .on("zoom", (event) => {
+    gRoot.attr("transform", event.transform);
+    if (event.sourceEvent && event.sourceEvent.type === "mousemove") {
+      d3.select("#chart-wrap").classed("panning", true);
+    }
+  })
+  .on("end", () => {
+    d3.select("#chart-wrap").classed("panning", false);
+  });
+
+svg.call(zoomBehavior);
+
+// Start at identity — the viewBox handles the initial fit
+svg.call(zoomBehavior.transform, d3.zoomIdentity);
+
+// ── Render ──
+function update() {
+  treeLayout(root);
+  const nodes = root.descendants();
+  const links = root.links();
+
+  // Links
+  gLink.selectAll("path")
+    .data(links, d => d.target.data.name)
+    .join("path")
+    .attr("class", "link")
+    .attr("d", radialLink);
+
+  // Nodes
+  const node = gNode.selectAll("g")
+    .data(nodes, d => d.data.name)
+    .join("g")
+    .attr("class", d => {
+      if (d.depth === 0) return "node node--root";
+      if (d.depth === 1) return "node node--level1";
+      if (d.depth >= 2 && (d.children || d._children)) return "node node--level2";
+      return "node node--leaf";
+    })
+    .attr("transform", d => {
+      const [x, y] = radialPoint(d.x, d.y);
+      return `translate(${x},${y})`;
+    })
+    .on("click", (event, d) => {
+      event.stopPropagation();
+      if (d.children) {
+        d._children = d.children;
+        d.children = null;
+      } else {
+        d.children = d._children;
+        d._children = null;
+      }
+      update();
+    })
+    .on("mouseenter", (event, d) => {
+      let extra = "";
+      if (d.data.name.includes("**")) extra = " — joint venture";
+      else if (d.data.name.includes("*")) extra = " — majority owned (not fully)";
+      tooltip.style("opacity", 1).html(d.data.name.replace(/\*+/g, "").replace(/\(\d+\)/, "").trim() + extra);
+    })
+    .on("mousemove", (event) => {
+      tooltip.style("left", (event.clientX + 14) + "px").style("top", (event.clientY - 10) + "px");
+    })
+    .on("mouseleave", () => tooltip.style("opacity", 0));
+
+  // Circle / Logo image
+  node.selectAll("circle").remove();
+  node.selectAll("image").remove();
+
+  node.each(function(d) {
+    const el = d3.select(this);
+    const isLeaf = !(d.children || d._children) && d.depth >= 2;
+
+    if (isLeaf) {
+      // Try to show logo for leaf brand nodes
+      const cleanName = d.data.name.replace(/\*+/g, "").trim();
+      const fileBase = cleanName.replace(/ /g, "_");
+      const exts = ["png", "jpg", "jpeg", "svg"];
+
+      // Add logo image (browser will show broken-image fallback if 404)
+      const imgSize = 24;
+      el.append("image")
+        .attr("class", "logo-img")
+        .attr("x", -imgSize / 2)
+        .attr("y", -imgSize / 2)
+        .attr("width", imgSize)
+        .attr("height", imgSize)
+        .attr("href", `car-logos/${fileBase}.png`)
+        .attr("preserveAspectRatio", "xMidYMid slice")
+        .on("error", function() {
+          // Try next extension
+          const img = d3.select(this);
+          const current = img.attr("href");
+          const extIdx = exts.findIndex(e => current.endsWith(`.${e}`));
+          if (extIdx >= 0 && extIdx < exts.length - 1) {
+            img.attr("href", `car-logos/${fileBase}.${exts[extIdx + 1]}`);
+          } else {
+            // All failed — hide image and show circle
+            img.style("display", "none");
+            el.append("circle")
+              .attr("r", 5)
+              .attr("class", "logo-fallback")
+              .style("display", "block");
+          }
+        });
+    } else {
+      el.append("circle");
+    }
+  });
+
+  // Label background + text
+  node.selectAll("rect").remove();
+  node.selectAll("text").remove();
+
+  node.each(function(d) {
+    if (d.depth === 0) {
+      d3.select(this).append("text")
+        .text(d.data.name)
+        .attr("y", 0)
+        .attr("dominant-baseline", "central")
+        .attr("text-anchor", "middle");
+      return;
+    }
+
+    const isLeaf = !(d.children || d._children) && d.depth >= 2;
+    const fs = d.depth === 1 ? 16 : d.depth >= 2 && (d.children || d._children) ? 13 : 11;
+    const txt = d.data.name;
+    const tw = txt.length * (fs * 0.6);
+    const padX = 10;
+    const w = tw + padX * 2;
+
+    // Logo offset: leaf nodes have a 24px image, so labels start further out
+    const logoOffset = isLeaf ? 14 : 0;
+
+    const angle = d.x;
+    const isRight = Math.cos(angle - Math.PI/2) >= -0.1;
+
+    const rectX = isRight ? 12 + logoOffset : -(tw + padX * 2 + 12 + logoOffset);
+    const textX = isRight ? 12 + padX + logoOffset : -(12 + padX + logoOffset);
+    const anchor = isRight ? "start" : "end";
+
+    d3.select(this).append("rect")
+      .attr("class", "label-bg")
+      .attr("x", rectX)
+      .attr("y", -13)
+      .attr("width", w)
+      .attr("height", 26);
+
+    d3.select(this).append("text")
+      .text(txt)
+      .attr("x", textX)
+      .attr("y", 0)
+      .attr("dominant-baseline", "central")
+      .attr("text-anchor", anchor);
+  });
+}
+
+// All nodes expanded
+update();
+
+// Zoom button handlers
+function zoomIn() {
+  svg.transition().duration(300).call(zoomBehavior.scaleBy, 1.4);
+}
+function zoomOut() {
+  svg.transition().duration(300).call(zoomBehavior.scaleBy, 0.7);
+}
+function zoomReset() {
+  svg.transition().duration(400).call(zoomBehavior.transform, d3.zoomIdentity);
+}
+
+d3.select("#zoom-in").on("click", zoomIn);
+d3.select("#zoom-out").on("click", zoomOut);
+d3.select("#zoom-fit").on("click", zoomReset);
+</script>
+
+</body>
+</html>
