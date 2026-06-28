@@ -9,6 +9,7 @@ An interactive radial tree chart showing global automotive brand ownership — w
 - **Radial tree layout** — root in the center, brands radiate outward
 - **Click to collapse/expand** any node to reduce clutter
 - **Level controls** — collapse all parent groups or segment nodes at once
+- **Group country flags** — top-level groups show headquarters or primary-country flags
 - **Scroll to zoom, drag to pan** around the chart
 - **Brand logo images** displayed for each leaf node
 - **Dark mode** support (follows OS preference)

@@ -389,6 +389,42 @@ const data = {
   ]
 };
 
+const groupFlags = {
+  "Volkswagen Group": "🇩🇪",
+  "Stellantis": "🇳🇱",
+  "Toyota Motor Corp": "🇯🇵",
+  "Renault-Nissan-Mitsubishi": "🇫🇷🇯🇵",
+  "Hyundai Motor Group": "🇰🇷",
+  "Mercedes-Benz Group": "🇩🇪",
+  "Honda Motor Co.": "🇯🇵",
+  "Suzuki Motor Corp.": "🇯🇵",
+  "Geely Holding Group": "🇨🇳",
+  "SAIC Motor": "🇨🇳",
+  "Chery Holding Group": "🇨🇳",
+  "Great Wall Motor": "🇨🇳",
+  "Changan Automobile": "🇨🇳",
+  "FAW Group": "🇨🇳",
+  "Dongfeng Motor": "🇨🇳",
+  "BAIC Group": "🇨🇳",
+  "General Motors": "🇺🇸",
+  "Ford Motor Company": "🇺🇸",
+  "Tata Motors": "🇮🇳",
+  "Mahindra Group": "🇮🇳",
+  "BMW Group": "🇩🇪"
+};
+
+function cleanNodeName(name) {
+  return name.replace(/\(\d+\)/g, "").trim();
+}
+
+function displayName(d) {
+  const name = cleanNodeName(d.data.name);
+  if (d.depth !== 1) return d.data.name;
+
+  const flag = groupFlags[name];
+  return flag ? `${flag} ${d.data.name}` : d.data.name;
+}
+
 // ── Dimensions ──
 const diameter = 2600;
 const radius = diameter / 2;
@@ -588,7 +624,7 @@ function update() {
     }
 
     const isLeaf = !(d.children || d._children) && d.depth >= 2;
-    const txt = d.data.name;
+    const txt = displayName(d);
     const padX = 10;
     const angle = d.x;
     const isRight = Math.cos(angle - Math.PI / 2) >= 0;
