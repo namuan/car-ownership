@@ -8,6 +8,7 @@ An interactive radial tree chart showing global automotive brand ownership — w
 
 - **Radial tree layout** — root in the center, brands radiate outward
 - **Click to collapse/expand** any node to reduce clutter
+- **Level controls** — collapse all parent groups or segment nodes at once
 - **Scroll to zoom, drag to pan** around the chart
 - **Brand logo images** displayed for each leaf node
 - **Dark mode** support (follows OS preference)
@@ -15,7 +16,7 @@ An interactive radial tree chart showing global automotive brand ownership — w
 
 ## Data
 
-Covers 21 major automotive groups and ~104 brands:
+Covers 22 major automotive groups and ~104 brands:
 
 | Group | Brands |
 |-------|--------|
@@ -39,7 +40,8 @@ Covers 21 major automotive groups and ~104 brands:
 | Ford | Ford, Lincoln |
 | Tata Motors | Jaguar, Land Rover |
 | Mahindra Group | Mahindra, Pininfarina |
-| Independent | Tesla, BYD, Ferrari, Aston Martin, McLaren, Lucid, Rivian, VinFast, Isuzu, BMW, MINI, Rolls-Royce |
+| BMW Group | BMW, MINI, Rolls-Royce |
+| Independent | Tesla, BYD, Ferrari, Aston Martin, McLaren, Lucid, Rivian, VinFast, Isuzu |
 
 ## Logo download
 

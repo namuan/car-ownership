@@ -170,17 +170,50 @@
   @media (prefers-color-scheme: dark) {
     .zoom-btn:hover { background: #2c2c2a; }
   }
+
+  .level-controls {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border: 0.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    z-index: 5;
+  }
+  .level-btn {
+    height: 28px;
+    padding: 0 9px;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .level-btn:hover { background: var(--color-background-secondary, #f5f5f4); }
+  @media (prefers-color-scheme: dark) {
+    .level-btn:hover { background: #2c2c2a; }
+  }
 </style>
 </head>
 <body>
 
 <header>
   <h1>Global Car Brand Ownership</h1>
-  <p class="subtitle">Scroll to zoom &bull; Drag to pan &bull; Tap node to collapse</p>
+  <p class="subtitle">Scroll to zoom &bull; Drag to pan &bull; Tap node or use level controls to collapse</p>
 </header>
 
 <div id="chart-wrap">
   <div id="chart"></div>
+  <div class="level-controls" aria-label="Collapse levels">
+    <button class="level-btn" id="expand-all" title="Expand all nodes">Expand all</button>
+    <button class="level-btn" id="collapse-groups" title="Collapse all parent groups">Groups</button>
+    <button class="level-btn" id="collapse-segments" title="Collapse all segment nodes">Segments</button>
+  </div>
   <div class="zoom-controls">
     <button class="zoom-btn" id="zoom-in" title="Zoom in">+</button>
     <button class="zoom-btn" id="zoom-out" title="Zoom out">−</button>
@@ -340,16 +373,17 @@ const data = {
       ]
     },
     {
-      name: "Independent (12)",
+      name: "BMW Group (3)",
       children: [
-        { name: "Fully Independent", children: [
-          { name: "Tesla" }, { name: "BYD" }, { name: "Ferrari" },
-          { name: "Aston Martin" }, { name: "McLaren" }, { name: "Lucid" },
-          { name: "Rivian" }, { name: "VinFast" }, { name: "Isuzu" }
-        ]},
-        { name: "BMW Group", children: [
-          { name: "BMW" }, { name: "MINI" }, { name: "Rolls-Royce" }
-        ]}
+        { name: "BMW" }, { name: "MINI" }, { name: "Rolls-Royce" }
+      ]
+    },
+    {
+      name: "Independent (9)",
+      children: [
+        { name: "Tesla" }, { name: "BYD" }, { name: "Ferrari" },
+        { name: "Aston Martin" }, { name: "McLaren" }, { name: "Lucid" },
+        { name: "Rivian" }, { name: "VinFast" }, { name: "Isuzu" }
       ]
     }
   ]
@@ -407,6 +441,42 @@ svg.call(zoomBehavior);
 
 // Start at identity — the viewBox handles the initial fit
 svg.call(zoomBehavior.transform, d3.zoomIdentity);
+
+function expandNode(d) {
+  if (d._children) {
+    d.children = d._children;
+    d._children = null;
+  }
+  if (d.children) d.children.forEach(expandNode);
+}
+
+function collapseNode(d) {
+  if (d.children) {
+    d._children = d.children;
+    d.children = null;
+  }
+}
+
+function expandAll() {
+  expandNode(root);
+  update();
+}
+
+function collapseAtDepth(depth) {
+  expandNode(root);
+  root.descendants()
+    .filter(d => d.depth === depth && d.children)
+    .forEach(collapseNode);
+  update();
+}
+
+function collapseSegments() {
+  expandNode(root);
+  root.descendants()
+    .filter(d => d.depth >= 2 && d.children)
+    .forEach(collapseNode);
+  update();
+}
 
 // ── Render ──
 function update() {
@@ -503,6 +573,7 @@ function update() {
   });
 
   // Label background + text
+  node.selectAll(".label").remove();
   node.selectAll("rect").remove();
   node.selectAll("text").remove();
 
@@ -517,35 +588,36 @@ function update() {
     }
 
     const isLeaf = !(d.children || d._children) && d.depth >= 2;
-    const fs = d.depth === 1 ? 16 : d.depth >= 2 && (d.children || d._children) ? 13 : 11;
     const txt = d.data.name;
-    const tw = txt.length * (fs * 0.6);
     const padX = 10;
-    const w = tw + padX * 2;
-
-    // Logo offset: leaf nodes have a 24px image, so labels start further out
-    const logoOffset = isLeaf ? 14 : 0;
-
     const angle = d.x;
-    const isRight = Math.cos(angle - Math.PI/2) >= -0.1;
-
-    const rectX = isRight ? 12 + logoOffset : -(tw + padX * 2 + 12 + logoOffset);
-    const textX = isRight ? 12 + padX + logoOffset : -(12 + padX + logoOffset);
+    const isRight = Math.cos(angle - Math.PI / 2) >= 0;
     const anchor = isRight ? "start" : "end";
+    const nodeRadius = isLeaf ? 12 : d.depth === 1 ? 9 : 7;
+    const gap = 6;
+    const labelX = (nodeRadius + gap) * (isRight ? 1 : -1);
+    const textX = isRight ? padX : -padX;
 
-    d3.select(this).append("rect")
-      .attr("class", "label-bg")
-      .attr("x", rectX)
-      .attr("y", -13)
-      .attr("width", w)
-      .attr("height", 26);
+    const label = d3.select(this).append("g")
+      .attr("class", "label")
+      .attr("transform", `translate(${labelX},0)`);
 
-    d3.select(this).append("text")
+    const text = label.append("text")
       .text(txt)
       .attr("x", textX)
       .attr("y", 0)
       .attr("dominant-baseline", "central")
       .attr("text-anchor", anchor);
+
+    const bbox = text.node().getBBox();
+    const rectX = isRight ? 0 : bbox.x - padX;
+
+    label.insert("rect", "text")
+      .attr("class", "label-bg")
+      .attr("x", rectX)
+      .attr("y", -13)
+      .attr("width", bbox.width + padX * 2)
+      .attr("height", 26);
   });
 }
 
@@ -566,6 +638,9 @@ function zoomReset() {
 d3.select("#zoom-in").on("click", zoomIn);
 d3.select("#zoom-out").on("click", zoomOut);
 d3.select("#zoom-fit").on("click", zoomReset);
+d3.select("#expand-all").on("click", expandAll);
+d3.select("#collapse-groups").on("click", () => collapseAtDepth(1));
+d3.select("#collapse-segments").on("click", collapseSegments);
 </script>
 
 </body>
