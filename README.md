@@ -1,14 +1,15 @@
-# Car Ownership Atlas
+# Car Ownership Tree
 
-An interactive circular tree showing global automotive brand ownership — which parent corporations control which car brands.
+An interactive radial tree chart showing global automotive brand ownership — which parent corporations control which car brands.
 
 ![](car-ownership.jpg)
 
 ## Features
 
-- **Circular tree layout** — parent groups radiate from the center into brands
-- **Curved ownership links** — branches are colored by parent group
-- **Hover path highlighting** — tooltips show ownership path and majority-owned or joint-venture status
+- **Radial tree layout** — root in the center, brands radiate outward
+- **Click to collapse/expand** any node to reduce clutter
+- **Scroll to zoom, drag to pan** around the chart
+- **Brand logo images** displayed for each leaf node
 - **Dark mode** support (follows OS preference)
 - **Asterisk notation**: `*` = majority-owned, `**` = joint venture
 
